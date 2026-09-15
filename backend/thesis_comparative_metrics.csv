@@ -1,0 +1,4 @@
+Dataset,Algorithm,NDCG@10,MAP@10,Recall@10,P@10
+scifact,Baseline BM25,0.6817,0.6346,0.8147,0.09
+scifact,Enhanced BM25,0.6264,0.5843,0.7464,0.0823
+arguana,Baseline BM25,0.4909,0.4047,0.7653,0.0765

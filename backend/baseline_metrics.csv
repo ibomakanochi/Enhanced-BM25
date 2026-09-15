@@ -1,0 +1,2 @@
+Dataset,NDCG@10,MAP@10,Recall@10,P@10
+scifact,0.6437,0.6009,0.762,0.0843
