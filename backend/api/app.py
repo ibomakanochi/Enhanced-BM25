@@ -19,7 +19,8 @@ print("Bootstrapping Two-Stage Retrieval Engine...")
 preprocessor = TextPreprocessor()
 
 print("Loading SciFact Corpus...")
-# We only need the corpus for the live app. (Queries and qrels are for evaluation).
+
+# We only need the corpus for the live app. (Queries and qrels are for evaluation). Change Dataset if said to do so.
 scifact_corpus, _, _ = download_beir_dataset("scifact")
 
 print("Initializing Fast BM25 Index (This will take a few seconds)...")

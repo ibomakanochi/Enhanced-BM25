@@ -38,16 +38,16 @@ for dataset in datasets:
     for query_id, query_text in queries.items():
         query_tokens = preprocessor.clean(query_text)
         
-        # Fetch Top 50 candidates using BM25
-        top_50_ids = bm25_stage1.get_top_k(query_tokens, k=50)
+        # Fetch Top 25 candidates using BM25
+        top_25_ids = bm25_stage1.get_top_k(query_tokens, k=25)
         
         # Prepare candidate objects for the reranker
         candidate_docs = [
             (score, doc_id, corpus[doc_id].get("title", "") + " " + corpus[doc_id].get("text", ""))
-            for doc_id, score in top_50_ids
+            for doc_id, score in top_25_ids
         ]
         
-        # Stage 2: Rerank the Top 50 down to the perfect Top 10 using the Neural Model
+        # Stage 2: Rerank the Top 25 down to the perfect Top 10 using the Neural Model
         top_10_reranked = reranker.rerank(query_text, candidate_docs, top_k=10)
         
         enhanced_results[query_id] = {doc_id: score for score, doc_id, _ in top_10_reranked}
