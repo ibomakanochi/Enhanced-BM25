@@ -1,30 +1,35 @@
 import re
 import nltk
+from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 
 class TextPreprocessor:
     def __init__(self):
-        # Ensure dependencies are downloaded locally
-        nltk.download('stopwords', quiet=True)
+        # Download required NLTK data on first run
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('stopwords')
+            
+        self.stemmer = PorterStemmer()
         self.stop_words = set(stopwords.words('english'))
-        
-        # We REMOVED the PorterStemmer. 
-        # FastText and NPMI lookup require whole, structurally intact words to find accurate synonyms (SOP 1).
 
     def clean(self, text):
-        # 1. Lowercase the text
+        if not text:
+            return []
+            
+        # 1. Lowercase and remove punctuation (keep only alphanumeric)
         text = text.lower()
+        text = re.sub(r'[^a-z0-9\s]', ' ', text)
         
-        # 2. Domain-Aware Regex: Keep letters, numbers, spaces, AND hyphens (for terms like "covid-19" or "il-6")
-        text = re.sub(r'[^a-z0-9\s\-]', '', text)
-        
-        # 3. Tokenize by splitting
+        # 2. Tokenize by whitespace
         tokens = text.split()
         
-        # 4. Remove stopwords and strip dangling hyphens, leaving original scientific nouns intact
-        clean_tokens = [
-            w.strip('-') for w in tokens 
-            if w not in self.stop_words and len(w.strip('-')) > 1
+        # 3. Remove stopwords and apply Porter Stemming (The Lucene Standard)
+        processed_tokens = [
+            self.stemmer.stem(word) 
+            for word in tokens 
+            if word not in self.stop_words
         ]
         
-        return clean_tokens
+        return processed_tokens

@@ -10,7 +10,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.build_index import download_beir_dataset
 from core.preprocessor import TextPreprocessor
 
-# Custom Fast Baseline using an Inverted Index (Identical math to rank-bm25, 50x faster)
 class FastBaselineBM25:
     def __init__(self, corpus, preprocessor, k1=1.5, b=0.75):
         self.k1 = k1
@@ -22,7 +21,13 @@ class FastBaselineBM25:
         
         total_len = 0
         for doc_id, doc in corpus.items():
-            full_text = doc.get("title", "") + " " + doc.get("text", "")
+            title = doc.get("title", "")
+            text = doc.get("text", "")
+            
+            # ENHANCEMENT 1: Title-Field Weighting
+            # Double-weighting the title to prioritize high-density scientific claims
+            full_text = f"{title} {title} {text}".strip()
+            
             tokens = preprocessor.clean(full_text)
             self.doc_lens[doc_id] = len(tokens)
             total_len += len(tokens)
@@ -40,7 +45,6 @@ class FastBaselineBM25:
             if term not in self.inverted_index:
                 continue
             
-            # Standard Okapi IDF
             df = self.df[term]
             idf = math.log(1.0 + (self.N - df + 0.5) / (df + 0.5))
             
@@ -52,9 +56,6 @@ class FastBaselineBM25:
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:k]
 
 
-# --- Evaluation Loop ---
-# This guard ensures the loop only runs when you explicitly execute THIS file, 
-# not when another file (like app.py) imports FastBaselineBM25 from it.
 if __name__ == "__main__":
     datasets = ["scifact", "arguana", "nfcorpus", "fiqa", "trec-covid"]
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -74,14 +75,11 @@ if __name__ == "__main__":
         corpus, queries, qrels = download_beir_dataset(dataset)
         queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
         
-        # Initialize our fast baseline
         baseline_bm25 = FastBaselineBM25(corpus, preprocessor)
         
         baseline_results = {}
         for query_id, query_text in queries.items():
             query_tokens = preprocessor.clean(query_text)
-            
-            # Instantly retrieve top 10
             top_docs = baseline_bm25.get_top_k(query_tokens, k=10)
             baseline_results[query_id] = {doc_id: score for doc_id, score in top_docs}
             

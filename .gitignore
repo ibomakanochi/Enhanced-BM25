@@ -57,4 +57,5 @@ yarn-error.log*
 Thumbs.db
 Desktop.ini
 .vscode/
-.idea/
+.idea/expanded_*_corpus.json
+**/expanded_*_corpus.json
