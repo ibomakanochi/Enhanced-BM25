@@ -2,7 +2,7 @@
 
 A lightweight, zero-latency document retrieval pipeline that enhances standard BM25 using offline generative expansion (Doc2Query) and dynamic field-weighting (BM25F). 
 
-This architecture successfully bypasses the structural limitations of standard lexical search (vocabulary mismatch, IDF bias, and length penalization) and outperforms state-of-the-art neural baselines like BMX—while strictly operating within edge-hardware constraints.
+This architecture successfully bypasses the structural limitations of standard lexical search (vocabulary mismatch, IDF bias, and length penalization) and outperforms state-of-the-art neural baselines like BMX while strictly operating within edge-hardware constraints.
 
 ## 🚀 Key Advantages
 
@@ -38,16 +38,17 @@ The architecture is built on a clean, modular Python backend:
 **1. Install dependencies:**
 ```bash
 pip install -r requirements.txt
+```
 
 **2. Generate Offline Expansion (Doc2Query):**
 ```bash
 python scripts/run_expansion.py
+```
 
 **3. Evaluate the Enhanced BM25F Pipeline:**
 ```bash
 python scripts/evaluate_enhanced.py
-
-Note: The script dynamically routes optimal field weights based on the active dataset and outputs final metrics to enhanced_metrics.csv
+```
 
 ---
 **Author:** Daniella Ibo
