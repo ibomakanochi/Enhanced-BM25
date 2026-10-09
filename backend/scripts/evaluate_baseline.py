@@ -24,9 +24,8 @@ class FastBaselineBM25:
             title = doc.get("title", "")
             text = doc.get("text", "")
             
-            # ENHANCEMENT 1: Title-Field Weighting
-            # Double-weighting the title to prioritize high-density scientific claims
-            full_text = f"{title} {title} {text}".strip()
+            # Standard Flat BM25 formulation
+            full_text = f"{title} {text}".strip()
             
             tokens = preprocessor.clean(full_text)
             self.doc_lens[doc_id] = len(tokens)
