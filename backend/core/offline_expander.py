@@ -1,6 +1,5 @@
 import torch
 from transformers import T5Tokenizer, T5ForConditionalGeneration
-from tqdm import tqdm
 
 class OfflineDocExpander:
     def __init__(self, model_name="doc2query/msmarco-t5-base-v1"):
@@ -40,7 +39,3 @@ class OfflineDocExpander:
         
         queries = [self.tokenizer.decode(out, skip_special_tokens=True) for out in outputs]
         return " ".join(queries)
-
-# Example usage for offline preprocessing:
-# expander = OfflineDocExpander()
-# corpus[doc_id]["expanded_queries"] = expander.generate_synthetic_queries(corpus[doc_id]["text"])

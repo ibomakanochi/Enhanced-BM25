@@ -9,9 +9,9 @@ from scripts.build_index import download_beir_dataset
 from core.preprocessor import TextPreprocessor
 from scripts.evaluate_enhanced import EnhancedBM25F  # Imports your new class
 
-def tune_scifact():
+def tune_nfcorpus():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dataset = "arguana"
+    dataset = "nfcorpus"
     
     # Load raw queries and qrels
     _, queries, qrels = download_beir_dataset(dataset)
@@ -24,7 +24,7 @@ def tune_scifact():
         
     preprocessor = TextPreprocessor()
     
-    # The Micro-Tuning Grid for SciFact
+    # The Micro-Tuning Grid for NFCORPUS
     title_weights = [1.0, 2.0, 3.0]
     exp_weights = [0.3, 0.7, 1.2]
     k1_values = [0.9, 1.2, 1.5]
@@ -33,7 +33,7 @@ def tune_scifact():
     best_ndcg = 0
     best_params = {}
     
-    print("Starting rapid parameter sweep for SciFact...")
+    print("Starting rapid parameter sweep for NFCorpus...")
     
     for w_title in title_weights:
         for w_exp in exp_weights:
@@ -61,9 +61,9 @@ def tune_scifact():
                         best_params = {'w_title': w_title, 'w_exp': w_exp, 'k1': k1, 'b': b}
 
     print("\n" + "="*50)
-    print(f"WINNING CONFIGURATION FOR SCIFACT: NDCG@10 = {best_ndcg:.4f}")
+    print(f"WINNING CONFIGURATION FOR NFCORPUS: NDCG@10 = {best_ndcg:.4f}")
     print(best_params)
     print("="*50)
 
 if __name__ == "__main__":
-    tune_scifact()
+    tune_nfcorpus()

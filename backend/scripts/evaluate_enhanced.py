@@ -118,7 +118,7 @@ if __name__ == "__main__":
         # Global optimal weights dictionary
         configs = {
             "scifact":   {"w_title": 3.5, "w_text": 1.0, "w_exp": 0.0, "k1": 1.3, "b": 0.80},
-            "nfcorpus":  {"w_title": 2.0, "w_text": 1.0, "w_exp": 0.7, "k1": 1.2, "b": 0.75},
+            "nfcorpus":  {"w_title": 2.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
             "arguana":   {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.75},
             "fiqa":      {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
             "trec-covid":{"w_title": 3.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
