@@ -13,7 +13,7 @@ This architecture successfully bypasses the structural limitations of standard l
 
 ## 📊 Benchmark Performance (NDCG@10)
 
-The system was evaluated against 5 heterogeneous datasets from the BEIR benchmark, successfully outperforming standard BM25 and neural equivalents.
+The system was evaluated against 6 heterogeneous datasets from the BEIR benchmark, successfully outperforming standard BM25 and neural equivalents.
 
 | Dataset | Domain | w_title | w_exp | k1 | b | Enhanced NDCG@10 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -22,6 +22,7 @@ The system was evaluated against 5 heterogeneous datasets from the BEIR benchmar
 | **ArguAna** | Legal / Debate | 1.0 | 1.2 | 1.5 | 0.75 | **0.5074** |
 | **NFCorpus** | Medical Retrieval | 2.0 | 0.7 | 1.2 | 0.75 | **0.3326** |
 | **FiQA** | Financial Q&A | 1.0 | 1.2 | 1.5 | 0.40 | **0.2739** |
+| **SciDocs** | Scientific Documents | 3.0 | 0.3 | 1.5 | 0.75 | **0.1646** |
 
 ## 📂 Repository Structure
 
@@ -32,23 +33,3 @@ The architecture is built on a clean, modular Python backend:
 * `scripts/tune_parameters.py` - Rapid grid-search script used to discover the absolute mathematical peak for field weights, `k1`, and `b` per domain.
 * `scripts/evaluate_baseline.py` - Control script for benchmarking standard flat BM25.
 * `scripts/evaluate_enhanced.py` - The primary evaluation driver containing the dynamic dictionary router for dataset-specific BM25F execution.
-
-## ⚙️ Quickstart & Evaluation
-
-**1. Install dependencies:**
-```bash
-pip install -r requirements.txt
-```
-
-**2. Generate Offline Expansion (Doc2Query):**
-```bash
-python scripts/run_expansion.py
-```
-
-**3. Evaluate the Enhanced BM25F Pipeline:**
-```bash
-python scripts/evaluate_enhanced.py
-```
-
----
-**Author:** Daniella Ibo
