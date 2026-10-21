@@ -1,15 +1,17 @@
+similar to this format for github:
+
 # Enhanced BM25 for Retrieval-Augmented Generation (RAG)
 
-A lightweight, zero-latency document retrieval pipeline that enhances standard BM25 using offline generative expansion (Doc2Query) and dynamic field-weighting (BM25F). 
+A lightweight, zero-latency document retrieval pipeline that enhances standard BM25 using offline generative expansion (Doc2Query) and dynamic field-weighting (BM25F). 
 
 This architecture successfully bypasses the structural limitations of standard lexical search (vocabulary mismatch, IDF bias, and length penalization) and outperforms state-of-the-art neural baselines like BMX while strictly operating within edge-hardware constraints.
 
 ## 🚀 Key Advantages
 
-* **Zero Runtime Latency:** By shifting the generative semantic payload entirely to the offline indexing phase (Doc2Query), the system eliminates the 50–200ms latency standard in neural cross-encoders. At query time, the system performs a pure, lightning-fast mathematical inverted-index lookup.
-* **Algorithmic Transparency:** Unlike neural networks that operate as black boxes, this BM25F framework is 100% interpretable. Field weights (`w_title`, `w_text`, `w_exp`) can be empirically tuned and analyzed to understand exactly *why* a document ranks highly.
-* **Domain Adaptability:** The system dynamically adapts to specialized corpora. It can prioritize strict title matching for academic datasets (SciFact) or maximize synthetic query expansion to bridge vocabulary gaps in conversational datasets (FiQA).
-* **Hardware-Constrained Viability:** Operates flawlessly on consumer-grade CPUs with an 8GB RAM limit, eliminating the need for expensive GPU clusters or heavy Java/Lucene enterprise backends.
+- **Zero Runtime Latency:** By shifting the generative semantic payload entirely to the offline indexing phase (Doc2Query), the system eliminates the 50–200ms latency standard in neural cross-encoders. At query time, the system performs a pure, lightning-fast mathematical inverted-index lookup.
+- **Algorithmic Transparency:** Unlike neural networks that operate as black boxes, this BM25F framework is 100% interpretable. Field weights (`w_title`, `w_text`, `w_exp`) can be empirically tuned and analyzed to understand exactly *why* a document ranks highly.
+- **Domain Adaptability:** The system dynamically adapts to specialized corpora. It can prioritize strict title matching for academic datasets (SciFact) or maximize synthetic query expansion to bridge vocabulary gaps in conversational datasets (FiQA).
+- **Hardware-Constrained Viability:** Operates flawlessly on consumer-grade CPUs with an 8GB RAM limit, eliminating the need for expensive GPU clusters or heavy Java/Lucene enterprise backends.
 
 ## 📊 Benchmark Performance (NDCG@10)
 
@@ -20,7 +22,7 @@ The system was evaluated against 6 heterogeneous datasets from the BEIR benchmar
 | **SciFact** | Scientific Claims | 3.5 | 0.0 | 1.3 | 0.80 | **0.6970** |
 | **TREC-COVID**| Pandemic Lit | 3.0 | 1.2 | 1.5 | 0.40 | **0.7013** |
 | **ArguAna** | Legal / Debate | 1.0 | 1.2 | 1.5 | 0.75 | **0.5074** |
-| **NFCorpus** | Medical Retrieval | 2.0 | 0.7 | 1.2 | 0.75 | **0.3326** |
+| **NFCorpus** | Medical Retrieval | 2.0 | 1.2 | 1.5 | 0.40 | **0.3355** |
 | **FiQA** | Financial Q&A | 1.0 | 1.2 | 1.5 | 0.40 | **0.2739** |
 | **SciDocs** | Scientific Documents | 3.0 | 0.3 | 1.5 | 0.75 | **0.1646** |
 
