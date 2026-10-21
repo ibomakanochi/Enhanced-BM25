@@ -85,7 +85,7 @@ class EnhancedBM25F:
 
 
 if __name__ == "__main__":
-    datasets = ["scifact", "nfcorpus", "arguana", "fiqa", "trec-covid"]
+    datasets = ["scifact", "nfcorpus", "arguana", "fiqa", "trec-covid", "scidocs"]
     
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     results_file = os.path.join(base_dir, "enhanced_metrics.csv")
@@ -122,6 +122,7 @@ if __name__ == "__main__":
             "arguana":   {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.75},
             "fiqa":      {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
             "trec-covid":{"w_title": 3.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
+            "scidocs":   {"w_title": 3.0, "w_text": 1.0, "w_exp": 0.3, "k1": 1.5, "b": 0.75},
             "default":   {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.0, "k1": 1.5, "b": 0.75}
         }
 

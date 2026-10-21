@@ -56,7 +56,7 @@ class FastBaselineBM25:
 
 
 if __name__ == "__main__":
-    datasets = ["scifact", "arguana", "nfcorpus", "fiqa", "trec-covid"]
+    datasets = ["scifact", "arguana", "nfcorpus", "fiqa", "trec-covid", "scidocs"]
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     results_file = os.path.join(base_dir, "baseline_metrics.csv")
 
