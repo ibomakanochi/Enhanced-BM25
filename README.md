@@ -1,5 +1,3 @@
-similar to this format for github:
-
 # Enhanced BM25 for Retrieval-Augmented Generation (RAG)
 
 A lightweight, zero-latency document retrieval pipeline that enhances standard BM25 using offline generative expansion (Doc2Query) and dynamic field-weighting (BM25F). 
