@@ -23,6 +23,8 @@ The system was evaluated against 6 heterogeneous datasets from the BEIR benchmar
 | **NFCorpus** | Medical Retrieval | 2.0 | 1.2 | 1.5 | 0.40 | **0.3355** |
 | **FiQA** | Financial Q&A | 1.0 | 1.2 | 1.5 | 0.40 | **0.2739** |
 | **SciDocs** | Scientific Documents | 3.0 | 0.3 | 1.5 | 0.75 | **0.1646** |
+| **Touché-2020** | Argument Retrieval | 1.0 | 0.3 | 1.5 | 0.40 | **0.4336** |
+| **CQADupStack** | Community QA | 3.0 | 0.7 | 1.5 | 0.75 | **0.3246** |
 
 ## 📂 Repository Structure
 
