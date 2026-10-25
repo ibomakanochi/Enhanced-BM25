@@ -4,6 +4,7 @@ import csv
 import gc
 import math
 from collections import defaultdict, Counter
+from tqdm import tqdm
 from beir.retrieval.evaluation import EvaluateRetrieval
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +21,9 @@ class FastBaselineBM25:
         self.doc_lens = {}
         
         total_len = 0
-        for doc_id, doc in corpus.items():
+        
+        # Added tqdm loading bar for the indexing phase
+        for doc_id, doc in tqdm(corpus.items(), desc="Indexing BM25 Corpus", unit="doc", leave=False):
             title = doc.get("title", "")
             text = doc.get("text", "")
             
@@ -56,7 +59,12 @@ class FastBaselineBM25:
 
 
 if __name__ == "__main__":
-    datasets = ["scifact", "arguana", "nfcorpus", "fiqa", "trec-covid", "scidocs"]
+    # Included all 8 datasets in the exact requested order
+    datasets = [
+        "scifact", "nfcorpus", "arguana", "fiqa", 
+        "trec-covid", "scidocs", "webis-touche2020", "cqadupstack"
+    ]
+    
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     results_file = os.path.join(base_dir, "baseline_metrics.csv")
 
@@ -65,32 +73,55 @@ if __name__ == "__main__":
         writer.writerow(["Dataset", "NDCG@10", "MAP@10", "Recall@10", "P@10"])
 
     print("\n--- FAST BASELINE BM25 EVALUATION ---")
-    print(f"{'Dataset':<12} | {'NDCG@10':<10} | {'MAP@10':<10} | {'Recall@10':<10}")
-    print("-" * 55)
+    print(f"{'Dataset':<15} | {'NDCG@10':<10} | {'MAP@10':<10} | {'Recall@10':<10}")
+    print("-" * 60)
 
     preprocessor = TextPreprocessor()
 
     for dataset in datasets:
-        corpus, queries, qrels = download_beir_dataset(dataset)
-        queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
+        # loaded_data contains {'android': (corpus, queries, qrels), ...} or {'scifact': ...}
+        loaded_data = download_beir_dataset(dataset)
         
-        baseline_bm25 = FastBaselineBM25(corpus, preprocessor)
-        
-        baseline_results = {}
-        for query_id, query_text in queries.items():
-            query_tokens = preprocessor.clean(query_text)
-            top_docs = baseline_bm25.get_top_k(query_tokens, k=10)
-            baseline_results[query_id] = {doc_id: score for doc_id, score in top_docs}
+        subset_metrics = []
+
+        for subset_name, (corpus, queries, qrels) in loaded_data.items():
+            queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
             
-        evaluator = EvaluateRetrieval()
-        base_ndcg, base_map, base_recall, base_p = evaluator.evaluate(qrels, baseline_results, k_values=[10])
+            baseline_bm25 = FastBaselineBM25(corpus, preprocessor)
+            
+            baseline_results = {}
+            
+            # Added tqdm loading bar for the query evaluation phase
+            for query_id, query_text in tqdm(queries.items(), desc=f"Evaluating {subset_name}", unit="q", leave=False):
+                query_tokens = preprocessor.clean(query_text)
+                top_docs = baseline_bm25.get_top_k(query_tokens, k=10)
+                baseline_results[query_id] = {doc_id: score for doc_id, score in top_docs}
+                
+            evaluator = EvaluateRetrieval()
+            base_ndcg, base_map, base_recall, base_p = evaluator.evaluate(qrels, baseline_results, k_values=[10])
+            
+            # Store metrics silently for macro-averaging
+            subset_metrics.append({
+                "ndcg": base_ndcg['NDCG@10'],
+                "map": base_map['MAP@10'],
+                "recall": base_recall['Recall@10'],
+                "p": base_p['P@10']
+            })
+            
+            del baseline_bm25, baseline_results, corpus, queries, qrels, evaluator
+            gc.collect()
+
+        # Calculate and print ONLY the macro-average for the entire dataset
+        macro_ndcg = sum(m["ndcg"] for m in subset_metrics) / len(subset_metrics)
+        macro_map = sum(m["map"] for m in subset_metrics) / len(subset_metrics)
+        macro_recall = sum(m["recall"] for m in subset_metrics) / len(subset_metrics)
+        macro_p = sum(m["p"] for m in subset_metrics) / len(subset_metrics)
         
-        print(f"{dataset:<12} | {base_ndcg['NDCG@10']:<10.4f} | {base_map['MAP@10']:<10.4f} | {base_recall['Recall@10']:<10.4f}")
+        # \r ensures that it overwrites the cleared tqdm bar smoothly
+        print(f"\r{dataset:<15} | {macro_ndcg:<10.4f} | {macro_map:<10.4f} | {macro_recall:<10.4f}")
+        
         with open(results_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([dataset, round(base_ndcg['NDCG@10'], 4), round(base_map['MAP@10'], 4), round(base_recall['Recall@10'], 4), round(base_p['P@10'], 4)])
-
-        del baseline_bm25, baseline_results, corpus, queries, qrels, evaluator
-        gc.collect()
+            writer.writerow([dataset, round(macro_ndcg, 4), round(macro_map, 4), round(macro_recall, 4), round(macro_p, 4)])
 
     print(f"\nBaseline evaluation complete! Data saved to: {results_file}")

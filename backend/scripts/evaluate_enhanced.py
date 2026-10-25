@@ -32,12 +32,11 @@ class EnhancedBM25F:
         total_len = 0
         
         # Build the Field-Weighted Inverted Index
-        for doc_id, doc in tqdm(corpus.items(), desc="Indexing BM25F Corpus", unit="doc"):
+        for doc_id, doc in tqdm(corpus.items(), desc="Indexing BM25F Corpus", unit="doc", leave=False):
             title_tokens = preprocessor.clean(doc.get("title", ""))
             text_tokens = preprocessor.clean(doc.get("text", ""))
             
             # In a real pipeline, this pulls from your offline Doc2Query generation.
-            # We default to an empty string if the offline step hasn't been run yet.
             exp_tokens = preprocessor.clean(doc.get("expanded_queries", ""))
             
             title_counts = Counter(title_tokens)
@@ -85,7 +84,7 @@ class EnhancedBM25F:
 
 
 if __name__ == "__main__":
-    datasets = ["scifact", "nfcorpus", "arguana", "fiqa", "trec-covid", "scidocs"]
+    datasets = ["scifact", "nfcorpus", "arguana", "fiqa", "trec-covid", "scidocs", "webis-touche2020", "cqadupstack"]
     
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     results_file = os.path.join(base_dir, "enhanced_metrics.csv")
@@ -95,69 +94,89 @@ if __name__ == "__main__":
         writer.writerow(["Dataset", "NDCG@10", "MAP@10", "Recall@10", "P@10"])
 
     print("\n--- SINGLE-STAGE ENHANCED EVALUATION (BM25F + Doc2Query) ---")
-    print(f"{'Dataset':<12} | {'NDCG@10':<10} | {'MAP@10':<10} | {'Recall@10':<10}")
-    print("-" * 55)
+    print(f"{'Dataset':<15} | {'NDCG@10':<10} | {'MAP@10':<10} | {'Recall@10':<10}")
+    print("-" * 60)
 
     preprocessor = TextPreprocessor()
+    
+    configs = {
+        "scifact":          {"w_title": 3.5, "w_text": 1.0, "w_exp": 0.0, "k1": 1.3, "b": 0.80},
+        "nfcorpus":         {"w_title": 2.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
+        "arguana":          {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.75},
+        "fiqa":             {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
+        "trec-covid":       {"w_title": 3.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
+        "scidocs":          {"w_title": 3.0, "w_text": 1.0, "w_exp": 0.3, "k1": 1.5, "b": 0.75},
+        "webis-touche2020": {"w_title": 1.0, "w_text": 1.0, "w_exp": 0.3, "k1": 1.5, "b": 0.40},
+        "cqadupstack":      {"w_title": 3.0, "w_text": 1.0, "w_exp": 0.7, "k1": 1.5, "b": 0.75},
+        "default":          {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.0, "k1": 1.5, "b": 0.75}
+    }
 
     for dataset in datasets:
-        # Load queries and qrels from BEIR (we ignore the raw corpus using '_')
-        _, queries, qrels = download_beir_dataset(dataset)
-        queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
+        # download_beir_dataset now returns a dict: {'android': (corpus, queries, qrels), ...} or {'scifact': (...)}
+        loaded_data = download_beir_dataset(dataset)
         
-        # Load your locally saved EXPANDED corpus
+        # Load your locally saved EXPANDED corpus once per dataset
         expanded_corpus_path = os.path.join(base_dir, f"expanded_{dataset}_corpus.json")
-        
         if not os.path.exists(expanded_corpus_path):
             print(f"Error: Expanded corpus not found for {dataset}. Please run run_expansion.py first.")
             continue
             
         with open(expanded_corpus_path, "r") as f:
-            corpus = json.load(f)
-        
-        # Global optimal weights dictionary
-        configs = {
-            "scifact":   {"w_title": 3.5, "w_text": 1.0, "w_exp": 0.0, "k1": 1.3, "b": 0.80},
-            "nfcorpus":  {"w_title": 2.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
-            "arguana":   {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.75},
-            "fiqa":      {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
-            "trec-covid":{"w_title": 3.0, "w_text": 1.0, "w_exp": 1.2, "k1": 1.5, "b": 0.40},
-            "scidocs":   {"w_title": 3.0, "w_text": 1.0, "w_exp": 0.3, "k1": 1.5, "b": 0.75},
-            "default":   {"w_title": 1.0, "w_text": 1.0, "w_exp": 1.0, "k1": 1.5, "b": 0.75}
-        }
-
-        # Select params based on current dataset, fallback to default if not found
+            full_expanded_corpus = json.load(f)
+            
         params = configs.get(dataset, configs["default"])
-        
-        enhanced_bm25f = EnhancedBM25F(
-            corpus, 
-            preprocessor, 
-            w_title=params["w_title"], 
-            w_text=params["w_text"], 
-            w_exp=params["w_exp"], 
-            k1=params["k1"], 
-            b=params["b"]
-        )
-        
-        enhanced_results = {}
-        
-        for query_id, query_text in tqdm(queries.items(), desc=f"Evaluating {dataset}", unit="q"):
-            query_tokens = preprocessor.clean(query_text)
+        subset_metrics = []
+
+        # Iterate through the subsets (1 for normal datasets, 12 for cqadupstack)
+        for subset_name, (raw_corpus, queries, qrels) in loaded_data.items():
+            queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
             
-            # Fetch the final top 10 directly from the index (0ms latency, no neural reranker)
-            top_docs = enhanced_bm25f.get_top_k(query_tokens, k=10)
-            enhanced_results[query_id] = {doc_id: score for doc_id, score in top_docs}
+            # Extract the correct corpus structure
+            if dataset == "cqadupstack":
+                subset_corpus = full_expanded_corpus.get(subset_name, {})
+            else:
+                subset_corpus = full_expanded_corpus
+                
+            enhanced_bm25f = EnhancedBM25F(
+                subset_corpus, 
+                preprocessor, 
+                w_title=params["w_title"], 
+                w_text=params["w_text"], 
+                w_exp=params["w_exp"], 
+                k1=params["k1"], 
+                b=params["b"]
+            )
             
-        evaluator = EvaluateRetrieval()
-        enh_ndcg, enh_map, enh_recall, enh_p = evaluator.evaluate(qrels, enhanced_results, k_values=[10])
+            enhanced_results = {}
+            for query_id, query_text in tqdm(queries.items(), desc=f"Evaluating {subset_name}", unit="q", leave=False):
+                query_tokens = preprocessor.clean(query_text)
+                top_docs = enhanced_bm25f.get_top_k(query_tokens, k=10)
+                enhanced_results[query_id] = {doc_id: score for doc_id, score in top_docs}
+                
+            evaluator = EvaluateRetrieval()
+            enh_ndcg, enh_map, enh_recall, enh_p = evaluator.evaluate(qrels, enhanced_results, k_values=[10])
+            
+            # Store metrics silently for macro-averaging
+            subset_metrics.append({
+                "ndcg": enh_ndcg['NDCG@10'],
+                "map": enh_map['MAP@10'],
+                "recall": enh_recall['Recall@10'],
+                "p": enh_p['P@10']
+            })
+            
+            del subset_corpus, queries, qrels, enhanced_bm25f, enhanced_results, evaluator
+            gc.collect()
+
+        # Calculate and print ONLY the macro-average for the entire dataset
+        macro_ndcg = sum(m["ndcg"] for m in subset_metrics) / len(subset_metrics)
+        macro_map = sum(m["map"] for m in subset_metrics) / len(subset_metrics)
+        macro_recall = sum(m["recall"] for m in subset_metrics) / len(subset_metrics)
+        macro_p = sum(m["p"] for m in subset_metrics) / len(subset_metrics)
         
-        print(f"\r{dataset:<12} | {enh_ndcg['NDCG@10']:<10.4f} | {enh_map['MAP@10']:<10.4f} | {enh_recall['Recall@10']:<10.4f}")
+        print(f"{dataset:<15} | {macro_ndcg:<10.4f} | {macro_map:<10.4f} | {macro_recall:<10.4f}")
         
         with open(results_file, mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([dataset, round(enh_ndcg['NDCG@10'], 4), round(enh_map['MAP@10'], 4), round(enh_recall['Recall@10'], 4), round(enh_p['P@10'], 4)])
-
-        del corpus, queries, qrels, enhanced_bm25f, enhanced_results, evaluator
-        gc.collect()
+            writer.writerow([dataset, round(macro_ndcg, 4), round(macro_map, 4), round(macro_recall, 4), round(macro_p, 4)])
 
     print(f"\nEnhanced evaluation complete! Data saved to: {results_file}")
