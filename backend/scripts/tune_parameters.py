@@ -9,31 +9,34 @@ from scripts.build_index import download_beir_dataset
 from core.preprocessor import TextPreprocessor
 from scripts.evaluate_enhanced import EnhancedBM25F  # Imports your new class
 
-def tune_nfcorpus():
+def tune_dataset(dataset_name):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dataset = "nfcorpus"
     
-    # Load raw queries and qrels
-    _, queries, qrels = download_beir_dataset(dataset)
+    # 1. Trigger the download/check safely without unpacking
+    download_beir_dataset(dataset_name)
+    
+    # 2. Safely load the queries and qrels using BEIR directly
+    data_path = os.path.join(base_dir, "data", "datasets", dataset_name)
+    _, queries, qrels = GenericDataLoader(data_path).load(split="test")
     queries = {qid: qtext for qid, qtext in queries.items() if qid in qrels}
     
-    # Load expanded corpus
-    expanded_corpus_path = os.path.join(base_dir, f"expanded_{dataset}_corpus.json")
-    with open(expanded_corpus_path, "r") as f:
+    # 3. Load expanded corpus
+    expanded_corpus_path = os.path.join(base_dir, f"expanded_{dataset_name}_corpus.json")
+    with open(expanded_corpus_path, "r", encoding="utf-8") as f:
         corpus = json.load(f)
         
     preprocessor = TextPreprocessor()
     
-    # The Micro-Tuning Grid for NFCORPUS
-    title_weights = [1.0, 2.0, 3.0]
-    exp_weights = [0.3, 0.7, 1.2]
-    k1_values = [0.9, 1.2, 1.5]
-    b_values = [0.4, 0.75]
+    # The Micro-Tuning Grid
+    title_weights = [1.0, 2.0, 3.0, 3.5]
+    exp_weights = [0.0, 0.3, 0.7, 1.2]
+    k1_values = [0.9, 1.2, 1.3, 1.5]
+    b_values = [0.4, 0.75, 0.80]
     
     best_ndcg = 0
     best_params = {}
     
-    print("Starting rapid parameter sweep for NFCorpus...")
+    print(f"Starting rapid parameter sweep for {dataset_name.upper()}...")
     
     for w_title in title_weights:
         for w_exp in exp_weights:
@@ -61,9 +64,10 @@ def tune_nfcorpus():
                         best_params = {'w_title': w_title, 'w_exp': w_exp, 'k1': k1, 'b': b}
 
     print("\n" + "="*50)
-    print(f"WINNING CONFIGURATION FOR NFCORPUS: NDCG@10 = {best_ndcg:.4f}")
+    print(f"WINNING CONFIGURATION FOR {dataset_name.upper()}: NDCG@10 = {best_ndcg:.4f}")
     print(best_params)
     print("="*50)
 
 if __name__ == "__main__":
-    tune_nfcorpus()
+    # Change the dataset name here to tune different datasets
+    tune_dataset("scifact")

@@ -3,6 +3,7 @@ import json
 import sys
 from collections import Counter
 import re
+from beir.datasets.data_loader import GenericDataLoader
 
 # Import your existing BEIR downloader
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,8 +12,12 @@ from scripts.build_index import download_beir_dataset
 dataset = "scifact" 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# 1. Fetch the queries and qrels
-_, queries, qrels = download_beir_dataset(dataset)
+# 1. Trigger the download/check safely without unpacking
+download_beir_dataset(dataset)
+
+# Safely load the queries and qrels using BEIR directly
+data_path = os.path.join(base_dir, "data", "datasets", dataset)
+_, queries, qrels = GenericDataLoader(data_path).load(split="test")
 
 # 2. Load the expanded SciFact corpus
 corpus_path = os.path.join(base_dir, f"expanded_{dataset}_corpus.json")
